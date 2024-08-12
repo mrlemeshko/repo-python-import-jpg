@@ -15,7 +15,7 @@ def get_image_from_query(query):
         return None
 
 # Открываем существующий файл Excel
-file_path = '/mnt/data/Тестовые позиции для парсинга.ods'
+file_path = '/mnt/data/Тестовые позиции для парсинга.xlsx'
 wb = load_workbook(filename=file_path)
 ws = wb.active
 
