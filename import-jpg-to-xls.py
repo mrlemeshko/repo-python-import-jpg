@@ -3,22 +3,23 @@ from openpyxl import Workbook
 from openpyxl.drawing.image import Image
 from io import BytesIO
 from PIL import Image as PILImage
+from bs4 import BeautifulSoup  # Добавляем этот импорт
 
-# Функция для поиска изображения по запросу в Yandex
+# Функция для поиска изображения по текстовому запросу через Яндекс
 def get_image_from_yandex(query):
-    search_url = f"https://yandex.com/images/search?text={query}&isize=gt&img_url=&iorient=square"
-    
+    search_url = 'https://yandex.ru/images/search'
+    params = {'text': query}
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"}
     
     try:
-        response = requests.get(search_url, headers=headers)
+        response = requests.get(search_url, params=params, headers=headers)
         response.raise_for_status()
 
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
+        # Парсинг HTML ответа и поиск изображения
+        soup = BeautifulSoup(response.text, 'html.parser')
         img_tags = soup.find_all("img", {"class": "serp-item__thumb justifier__thumb"})
-        
+
         if img_tags:
             img_url = img_tags[0]["src"]
             img_response = requests.get(img_url)
