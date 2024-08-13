@@ -3,3 +3,5 @@ requests
 beautifulsoup4
 Pillow
 lxml
+fake_headers
+bs4
