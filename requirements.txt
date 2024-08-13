@@ -5,3 +5,4 @@ Pillow
 lxml
 fake_headers
 bs4
+icrawler
