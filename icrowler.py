@@ -10,6 +10,18 @@ output_folder = 'downloaded_images'
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
+# Чтение запросов из файла
+def read_queries_from_file(filename):
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            content = file.read()
+            queries = [query.strip() for query in content.split(',') if query.strip()]
+            print(f"Файл успешно прочитан. Найдено {len(queries)} запросов.")
+            return queries
+    except Exception as e:
+        print(f"Ошибка при чтении файла: {e}")
+        return []
+
 # Функция для загрузки изображений с Google и вставки их в Excel
 def download_images_and_insert_to_excel(queries, max_num=1):
     # Создаем новый Excel файл
@@ -53,8 +65,11 @@ def download_images_and_insert_to_excel(queries, max_num=1):
     wb.save('Тестовые_позиции_с_изображениями.xlsx')
     print("Результаты сохранены в файл 'Тестовые_позиции_с_изображениями.xlsx'")
 
-# Пример запросов
-queries = ['iPhone 13', 'Samsung Galaxy S21', 'Sony PlayStation 5']
+# Основной код
+if __name__ == "__main__":
+    # Чтение запросов из файла
+    queries = read_queries_from_file('Тестовые_позиции.txt')
 
-# Загрузка изображений и вставка в Excel
-download_images_and_insert_to_excel(queries)
+    if queries:
+        # Загрузка изображений и вставка в Excel
+        download_images_and_insert_to_excel(queries)
