@@ -1,14 +1,14 @@
 from icrawler.builtin import GoogleImageCrawler
+from icrawler import ImageDownloader
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as ExcelImage
 import os
 from io import BytesIO
 from PIL import Image as PILImage
+import shutil
 
 # Папка для сохранения изображений
 output_folder = 'downloaded_images'
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
 
 # Чтение запросов из файла
 def read_queries_from_file(filename):
@@ -22,6 +22,27 @@ def read_queries_from_file(filename):
         print(f"Ошибка при чтении файла: {e}")
         return []
 
+# Очистка папки с изображениями
+def clear_image_folder(folder):
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+    os.makedirs(folder)
+
+# Кастомный загрузчик для сохранения URL
+class MyImageDownloader(ImageDownloader):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.downloaded_list = []
+
+    def download(self, task, default_ext, timeout=5, max_retry=3, **kwargs):
+        try:
+            url = task['file_url']
+            self.downloaded_list.append(url)
+            # Передаем все аргументы в родительский метод
+            return super().download(task, default_ext, timeout, max_retry, **kwargs)
+        except Exception as e:
+            print(f"Ошибка загрузки изображения: {e}")
+
 # Функция для загрузки изображений с Google и вставки их в Excel
 def download_images_and_insert_to_excel(queries, max_num=1):
     # Создаем новый Excel файл
@@ -31,20 +52,26 @@ def download_images_and_insert_to_excel(queries, max_num=1):
 
     # Добавляем заголовки
     ws['A1'] = 'Артикул'
-    ws['B1'] = 'Изображение'
-
-    # Создаем экземпляр GoogleImageCrawler
-    google_crawler = GoogleImageCrawler(storage={'root_dir': output_folder})
+    ws['B1'] = 'URL изображения'
+    ws['C1'] = 'Изображение'
 
     for index, query in enumerate(queries, start=2):
         print(f"Ищем изображения для: {query}")
+        
+        # Очищаем папку перед каждым запросом
+        clear_image_folder(output_folder)
+
+        # Создаем экземпляр GoogleImageCrawler с кастомным загрузчиком
+        google_crawler = GoogleImageCrawler(storage={'root_dir': output_folder},
+                                            downloader_cls=MyImageDownloader)
+
         # Запуск поиска изображений
         google_crawler.crawl(keyword=query, max_num=max_num)
 
-        # Получаем первый загруженный файл
-        images = os.listdir(output_folder)
-        if images:
-            img_path = os.path.join(output_folder, images[0])
+        # Проверяем, был ли найден URL изображения
+        if google_crawler.downloader.downloaded_list:
+            img_url = google_crawler.downloader.downloaded_list[0]  # Берем первый найденный URL
+            img_path = os.path.join(output_folder, os.listdir(output_folder)[0])
             
             # Открываем изображение и вставляем его в Excel
             img = PILImage.open(img_path)
@@ -52,12 +79,11 @@ def download_images_and_insert_to_excel(queries, max_num=1):
             img.save(buffer, format="JPEG")
             img_excel = ExcelImage(BytesIO(buffer.getvalue()))
 
+            # Записываем артикул и URL изображения
             ws.cell(row=index, column=1, value=query)
-            img_excel.anchor = f'B{index}'
+            ws.cell(row=index, column=2, value=img_url)  # Вставляем полный URL изображения
+            img_excel.anchor = f'C{index}'
             ws.add_image(img_excel)
-            
-            # Удаляем изображение после вставки
-            os.remove(img_path)
         else:
             print(f"Не удалось найти изображения для: {query}")
 
