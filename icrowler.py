@@ -75,6 +75,11 @@ def download_images_and_insert_to_excel(queries, max_num=1):
             
             # Открываем изображение, адаптируем его и вставляем в Excel
             img = PILImage.open(img_path)
+
+            # Преобразование изображения в RGB, если оно имеет альфа-канал или палитру
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+
             img = img.resize((100, 100), PILImage.LANCZOS)  # Адаптируем изображение до 100x100
             buffer = BytesIO()
             img.save(buffer, format="JPEG")
