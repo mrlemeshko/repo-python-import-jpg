@@ -55,6 +55,11 @@ def download_images_and_insert_to_excel(queries, max_num=1):
     ws['B1'] = 'URL изображения'
     ws['C1'] = 'Изображение'
 
+    # Устанавливаем ширину и высоту столбцов/строк
+    ws.column_dimensions['C'].width = 45
+    for row in ws.iter_rows(min_row=2, max_row=len(queries) + 1):
+        ws.row_dimensions[row[0].row].height = 75  # Устанавливаем высоту строки
+
     for index, query in enumerate(queries, start=2):
         print(f"Ищем изображения для: {query}")
         
@@ -73,8 +78,9 @@ def download_images_and_insert_to_excel(queries, max_num=1):
             img_url = google_crawler.downloader.downloaded_list[0]  # Берем первый найденный URL
             img_path = os.path.join(output_folder, os.listdir(output_folder)[0])
             
-            # Открываем изображение и вставляем его в Excel
+            # Открываем изображение, адаптируем его и вставляем в Excel
             img = PILImage.open(img_path)
+            img = img.resize((300, 300), PILImage.LANCZOS)  # Используем LANCZOS для изменения размера
             buffer = BytesIO()
             img.save(buffer, format="JPEG")
             img_excel = ExcelImage(BytesIO(buffer.getvalue()))
